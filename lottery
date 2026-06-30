@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>抽奖助手</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,"Microsoft Yahei",sans-serif;}
+body{background:#f5f5f7;color:#333;max-width:750px;margin:0 auto;}
+/* 顶部标题栏 */
+.top-bar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:16px 14px;
+    background:#fff;
+}
+.top-bar h1{font-size:20px;font-weight:500;}
+.top-icon{width:32px;height:32px;border:1px solid #eee;border-radius:50%;display:flex;align-items:center;justify-content:center;}
+/* 奖品信息区域 */
+.prize-info{
+    background:#fff;
+    padding:10px 14px 20px;
+}
+.prize-text{font-size:16px;margin-bottom:10px;}
+.time-text{color:#999;font-size:14px;}
+.divider{height:8px;background:#eee;}
+/* 发起人模块 */
+.creator-box{
+    background:#fff;
+    padding:16px 14px;
+}
+.creator-title{color:#888;font-size:15px;margin-bottom:12px;}
+.creator-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    background:#f7f7f8;
+    padding:14px 16px;
+    border-radius:10px;
+}
+.creator-desc{font-size:17px;}
+.add-friend-btn{
+    background:#f53855;
+    color:#fff;
+    border:none;
+    padding:9px 22px;
+    border-radius:6px;
+    font-size:16px;
+}
+/* 中间提示气泡 */
+.tip-pop{
+    text-align:center;
+    padding:14px 0;
+    position:relative;
+}
+.tip-text{
+    background:#fff;
+    color:#e03b47;
+    font-size:16px;
+    padding:8px 16px;
+    border-radius:6px;
+    display:inline-block;
+    position:relative;
+}
+.tip-text::after{
+    content:"";
+    width:0;height:0;
+    border-left:8px solid transparent;
+    border-right:8px solid transparent;
+    border-top:8px solid #fff;
+    position:absolute;
+    bottom:-8px;
+    left:50%;
+    transform:translateX(-50%);
+}
+/* 核心抽奖大圆按钮 */
+.big-add-btn{
+    width:220px;height:220px;
+    background:#e84444;
+    border:none;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    margin:10px auto 30px;
+    color:#fff;
+    font-size:32px;
+    font-weight:500;
+    transition: all 0.2s;
+}
+.big-add-btn:disabled{
+    background:#999;
+}
+/* 参与人数 */
+.join-count{
+    text-align:center;color:#888;font-size:16px;margin-bottom:16px;
+}
+.avatar-row{
+    display:flex;
+    gap:8px;
+    padding:0 14px 24px;
+}
+.avatar{
+    width:64px;height:64px;border-radius:8px;
+    background:#ddd;
+    overflow:hidden;
+}
+.avatar img{width:100%;height:100%;object-fit:cover;}
+/* 悬浮倍率标签 */
+.rate-tag{
+    position:fixed;
+    right:16px;
+    bottom:140px;
+    width:90px;height:90px;
+    background:#36c069;
+    border-radius:50%;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    color:#fff;
+    font-size:14px;
+    z-index:99;
+}
+.rate-tag .hand{font-size:36px;}
+/* 底部功能按钮区 */
+.bottom-func{
+    background:#fff;
+    display:flex;
+    padding:12px 14px;
+    gap:12px;
+    align-items:center;
+}
+.func-btn{
+    flex:1;
+    border:1px solid #eee;
+    border-radius:8px;
+    text-align:center;
+    padding:12px 0;
+    font-size:16px;
+    color:#e03b47;
+}
+/* 底部长条按钮 */
+.main-btn-wrap{
+    background:#fff;
+    padding:14px;
+}
+#slideTipBtn{
+    width:100%;
+    height:64px;
+    background:#e83e3e;
+    border:none;
+    border-radius:10px;
+    color:#fff;
+    font-size:22px;
+    font-weight:500;
+}
+.bottom-tip{
+    text-align:center;
+    color:#e03b47;
+    font-size:15px;
+    padding:12px 0;
+}
+/* 全屏黑屏遮罩（原来红色改成黑色） */
+.flash-screen{
+    position: fixed;
+    top:0;
+    left:0;
+    width:100vw;
+    height:100vh;
+    background:#000000;
+    opacity:0;
+    pointer-events:none;
+    z-index:9999;
+}
+/* 黑屏动画：显示1秒再消失 */
+@keyframes flashAnim {
+    0%{opacity:0}
+    10%{opacity:1}
+    90%{opacity:1}
+    100%{opacity:0}
+}
+.flash-active{
+    animation: flashAnim 1s ease-in-out 1 forwards;
+}
+</style>
+</head>
+<body>
+<!-- 全屏闪屏层 -->
+<div class="flash-screen" id="flashBox"></div>
+
+<!-- 顶部导航 -->
+<div class="top-bar">
+    <div class="top-icon">&lt;</div>
+    <h1>抽奖助手</h1>
+    <div style="display:flex;gap:10px;">
+        <div class="top-icon">···</div>
+        <div class="top-icon">⦿</div>
+    </div>
+</div>
+
+<!-- 奖品信息 -->
+<div class="prize-info">
+    <div class="prize-text">100×3 份</div>
+    <div class="prize-text">胸像×3份</div>
+   <div class="prize-text">你产品QQ互动×3份</div>
+    <div class="time-text">9 月 31 日 12:02 自动开奖</div>
+</div>
+<div class="divider"></div>
+
+<!-- 抽奖发起人 -->
+<div class="creator-box">
+    <div class="creator-title">抽奖发起人</div>
+    <div class="creator-row">
+        <div class="creator-desc">点击参与抽奖，福利多多</div>
+        <button class="add-friend-btn">加好友</button>
+    </div>
+</div>
+
+<!-- 中间提示气泡 -->
+<div class="tip-pop">
+    <div class="tip-text">添加发起人，兑奖更方便</div>
+</div>
+
+<!-- 唯一可点击抽奖大圆按钮 -->
+<button class="big-add-btn" id="lotteryBtn">参与抽奖</button>
+
+<!-- 参与人数 -->
+<div class="join-count">已有 478 人参与，查看全部 &gt;</div>
+<div class="avatar-row">
+    <div class="avatar"><img src="https://picsum.photos/id/40/64/64"></div>
+    <div class="avatar"><img src="https://picsum.photos/id/64/64/64"></div>
+    <div class="avatar"><img src="https://picsum.photos/id/11/64/64"></div>
+    <div class="avatar"><img src="https://picsum.photos/id/122/64/64"></div>
+    <div class="avatar"><img src="https://picsum.photos/id/33/64/64"></div>
+    <div class="avatar"><img src="https://picsum.photos/id/18/64/64"></div>
+</div>
+
+<!-- 底部功能按钮 -->
+<div class="bottom-func">
+    <div style="flex:2;background:#eee;height:100px;border-radius:8px;overflow:hidden;">
+        <img style="width:100%;height:100%;object-fit:cover;" src="https://picsum.photos/id/1060/400/180">
+    </div>
+    <div class="func-btn">+ 我也发个抽奖</div>
+    <div class="func-btn">⎕ 分享抽奖</div>
+</div>
+
+<!-- 底部上滑区域 -->
+<div class="main-btn-wrap">
+    <button id="slideTipBtn">上滑一下，手气更佳</button>
+</div>
+
+<script>
+// 中间大圆抽奖按钮逻辑
+const drawBtn = document.getElementById("lotteryBtn");
+const flashBox = document.getElementById("flashBox");
+
+drawBtn.addEventListener("click",function(){
+    drawBtn.innerText = "😃";
+    drawBtn.disabled = true;
+
+    // 先弹出弹窗，点确定后再黑屏
+    alert("你做了一件错事");
+    // 弹窗确认后执行黑屏
+    flashBox.classList.remove("flash-active");
+    void flashBox.offsetWidth;
+    flashBox.classList.add("flash-active");
+    // 动画1秒自动结束，无需手动移除类
+})
+
+// 页面向上滑动触发弹窗提示
+let slideTriggered = false;
+window.addEventListener("scroll",function(){
+    if(!slideTriggered && window.scrollY > 55){
+        slideTriggered = true;
+        alert("你做了一件错事");
+        alert("好在你还有改过自新的机会"); 
+        alert("那会是什么时候？");
+    }
+})
+</script>
+</body>
+</html>
