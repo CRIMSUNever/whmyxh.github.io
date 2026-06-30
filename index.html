@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>个人电脑 - 桌面</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:Microsoft Yahei,system-ui,sans-serif;user-select:none;}
+body{
+  width:100vw;height:100vh;overflow:hidden;
+  background:#223450;
+  background-image:radial-gradient(#30486b 1px,transparent 1px);
+  background-size:30px 30px;
+}
+/* 桌面图标区域 */
+.desktop{
+  padding:20px;
+  display:grid;
+  grid-template-columns:80px;
+  gap:24px;
+}
+.icon-item{
+  width:80px;text-align:center;color:#fff;cursor:pointer;
+}
+.icon-item .ico{
+  font-size:42px;margin-bottom:6px;
+}
+.icon-item.active{background:rgba(255,255,255,0.2);border-radius:6px;}
+/* 窗口容器 */
+.window{
+  position:absolute;width:620px;height:420px;background:#fff;border-radius:6px;
+  box-shadow:0 8px 30px rgba(0,0,0,0.3);overflow:hidden;display:none;
+}
+.window-head{
+  height:34px;background:#2067bc;color:#fff;display:flex;align-items:center;
+  justify-content:space-between;padding:0 10px;cursor:move;
+}
+.window-btn span{
+  width:14px;height:14px;border-radius:50%;display:inline-block;margin:0 3px;
+}
+.btn-close{background:#ff5f57;}
+.btn-min{background:#ffbd2e;}
+.btn-max{background:#28c840;}
+.window-body{
+  height:calc(100% - 34px);padding:15px;overflow:auto;color:#222;line-height:1.7;
+}
+/* 底部任务栏 */
+.taskbar{
+  position:fixed;left:0;bottom:0;width:100%;height:40px;background:rgba(20,20,20,0.85);
+  display:flex;align-items:center;padding:0 10px;gap:10px;color:#fff;z-index:999;
+}
+.start-btn{
+  padding:4px 12px;background:#2067bc;border-radius:4px;cursor:pointer;
+}
+.task-time{margin-left:auto;padding:0 10px;font-size:14px;}
+/* 弹窗遮罩 */
+.modal-mask{
+  position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9998;display:none;
+  align-items:center;justify-content:center;
+}
+.modal-box{
+  width:340px;background:#fff;border-radius:8px;padding:22px;text-align:center;
+}
+.modal-box button{
+  margin-top:16px;padding:8px 24px;border:none;background:#2067bc;color:#fff;border-radius:4px;cursor:pointer;
+}
+/* 黑屏闪屏动画 */
+.black-flash{
+  position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;z-index:9999;
+}
+@keyframes flash1s{
+  0%{opacity:0}
+  10%{opacity:1}
+  90%{opacity:1}
+  100%{opacity:0}
+}
+.flash-run{animation:flash1s 1s ease-in-out 1 forwards;}
+</style>
+</head>
+<body>
+<!-- 全屏黑屏层 -->
+<div class="black-flash" id="flashScreen"></div>
+<!-- 提示弹窗 -->
+<div class="modal-mask" id="alertModal">
+  <div class="modal-box">
+    <p id="modalText"></p>
+    <button onclick="modalConfirm()">确定</button>
+  </div>
+</div>
+
+<!-- 桌面图标 -->
+<div class="desktop">
+  <div class="icon-item" ondblclick="openWindow('note')">
+    <div class="ico">📝</div>
+    <div>记事本</div>
+  </div>
+  <div class="icon-item" ondblclick="openWindow('mail')">
+    <div class="ico">📧</div>
+    <div>收件箱</div>
+  </div>
+  <div class="icon-item" ondblclick="openWindow('recycle')">
+    <div class="ico">🗑️</div>
+    <div>回收站</div>
+  </div>
+</div>
+
+<!-- 窗口：记事本 -->
+<div class="window" id="win-note" style="left:120px;top:80px;z-index:10;">
+  <div class="window-head" onmousedown="dragStart(event,'win-note')">
+    <span>记事本 - 备忘录.txt</span>
+    <div class="window-btn">
+      <span class="btn-min" onclick="minWindow('win-note')"></span>
+      <span class="btn-max"></span>
+      <span class="btn-close" onclick="closeWindow('win-note')"></span>
+    </div>
+  </div>
+  <div class="window-body">
+    <p>随手留下的记录：</p>
+    <p>刚才运行抽奖程序时弹出了几段奇怪提示，不知道是什么原因。</p>
+    <p>或许里面藏着什么入口。</p>
+  </div>
+</div>
+
+<!-- 窗口：收件箱 -->
+<div class="window" id="win-mail" style="left:240px;top:140px;z-index:12;">
+  <div class="window-head" onmousedown="dragStart(event,'win-mail')">
+    <span>邮件收件箱</span>
+    <div class="window-btn">
+      <span class="btn-min"></span>
+      <span class="btn-max"></span>
+      <span class="btn-close" onclick="closeWindow('win-mail')"></span>
+    </div>
+  </div>
+  <div class="window-body">
+    <p>一封未读邮件：</p>
+    <p>发件人：你猜我是谁呀</p>
+    <p>内容：QQ怎么不回我？你那抽奖是不是有什么毛病笑死我了。</p>
+  </div>
+</div>
+
+
+
+<!-- 窗口：回收站 -->
+<div class="window" id="win-recycle" style="left:360px;top:200px;z-index:14;">
+  <div class="window-head" onmousedown="dragStart(event,'win-recycle')">
+    <span>回收站</span>
+    <div class="window-btn">
+      <span class="btn-min"></span>
+      <span class="btn-max"></span>
+      <span class="btn-close" onclick="closeWindow('win-recycle')"></span>
+    </div>
+  </div>
+  <div class="window-body">
+    <p>回收站为空</p>
+    <p>没有删除的文件。</p>
+  </div>
+</div>
+
+<!-- 底部任务栏 -->
+<div class="taskbar">
+  <div class="start-btn">开始菜单</div>
+  <div id="taskOpen"></div>
+  <div class="task-time" id="timeBox"></div>
+</div>
+
+<script>
+// 游戏全局变量
+let gameData = {
+  lotteryUsed: false
+};
+// 窗口拖拽变量
+let dragWin = null, dragOffX=0,dragOffY=0;
+// 弹窗工具
+let modalResolve = null;
+function showModal(text){
+  document.getElementById('modalText').innerText = text;
+  document.getElementById('alertModal').style.display = 'flex';
+  return new Promise(res=>modalResolve=res);
+}
+function modalConfirm(){
+  document.getElementById('alertModal').style.display = 'none';
+  if(modalResolve) modalResolve();
+}
+// 1秒黑屏闪屏
+function runBlackFlash(){
+  const flash = document.getElementById('flashScreen');
+  flash.classList.remove('flash-run');
+  void flash.offsetWidth;
+  flash.classList.add('flash-run');
+}
+// 打开窗口
+function openWindow(name){
+  const win = document.getElementById('win-'+name);
+  win.style.display = 'block';
+  win.style.zIndex = 20 + Date.now();
+}
+// 关闭窗口
+function closeWindow(name){
+  document.getElementById('win-'+name).style.display = 'none';
+}
+// 最小化简易逻辑
+function minWindow(name){
+  document.getElementById(name).style.display = 'none';
+}
+// 窗口拖拽
+function dragStart(e,winId){
+  dragWin = document.getElementById(winId);
+  dragOffX = e.clientX - dragWin.offsetLeft;
+  dragOffY = e.clientY - dragOffY;
+  dragWin.style.zIndex = 20 + Date.now();
+  document.onmousemove = dragMove;
+  document.onmouseup = dragEnd;
+}
+function dragMove(e){
+  dragWin.style.left = (e.clientX - dragOffX)+'px';
+  dragWin.style.top = (e.clientY - dragOffY)+'px';
+}
+function dragEnd(){
+  dragWin=null;
+  document.onmousemove=null;
+  document.onmouseup=null;
+}
+
+}
+// 系统时间更新
+function updateTime(){
+  const now = new Date();
+  document.getElementById('timeBox').innerText = now.toLocaleString();
+}
+setInterval(updateTime,1000);
+updateTime();
+</script>
+</body>
+</html>
